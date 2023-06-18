@@ -1,1 +1,62 @@
-echo "Ola Jenkins com o pipeline do github"
+pipeline {
+    agent any
+
+    stages {
+        stage('Compilação') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+
+        stage('Testes Automatizados com Selenium') {
+            steps {
+                sh 'webdriver-manager update'
+                sh 'mvn test'
+                sh 'mvn surefire-report:report'
+            }
+        }
+
+        stage('Testes de Performance com JMeter') {
+            steps {
+                sh 'jmeter/bin/jmeter.sh -n -t test.jmx'
+                sh 'jmeter/bin/jmeter.sh -n -t test.jmx -Jusers=100'
+                sh 'jmeter/bin/jmeter.sh -n -t test.jmx -Jusers=100 -Jduration=60'
+                sh 'jmeter/bin/jmeter.sh -g test.jtl -o report/'
+            }
+        }
+
+        stage('Análise de Qualidade de Software com SonarQube') {
+            steps {
+                sh 'sonar-scanner'
+                sh 'sonar-scanner'
+                sh 'sonar-scanner'
+            }
+        }
+
+        stage('Versionamento de Scripts com Flyway') {
+            steps {
+                sh 'flyway migrate'
+                sh 'flyway migrate'
+                sh 'flyway validate'
+            }
+        }
+
+        stage('Implantação Contínua e Entrega de Software') {
+            steps {
+                sh 'ansible-playbook deploy.yml'
+            }
+        }
+    }
+
+    post {
+        always {
+            // Ações executadas após cada etapa, independentemente do resultado
+        }
+        success {
+            // Ações executadas somente se todas as etapas tiverem sucesso
+        }
+        failure {
+            // Ações executadas se alguma etapa falhar
+        }
+    }
+}
